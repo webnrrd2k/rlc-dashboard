@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AC RLC Circuit Interactive Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            color: #1a365d;
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        @media (min-width: 768px) {
+            .layout { grid-template-columns: 350px 1fr; }
+        }
+        .controls {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .control-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #4a5568;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 4px;
+        }
+        .val-disp {
+            float: right;
+            font-weight: normal;
+            color: #2b6cb0;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e0;
+            font-size: 16px;
+        }
+        .visuals {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 992px) {
+            .visuals { grid-template-columns: 1fr 1fr; }
+        }
+        .canvas-container {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            background: #fafafa;
+        }
+        .results-panel {
+            grid-column: 1 / -1;
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .metric {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            border-left: 4px solid #3182ce;
+        }
+        .metric-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #718096;
+            font-weight: 600;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-top: 4px;
+        }
+        .state-banner {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 18px;
+        }
+        .inductive { background-color: #feebc8; color: #c05621; }
+        .capacitive { background-color: #ebf8ff; color: #2b6cb0; }
+        .resonant { background-color: #c6f6d5; color: #22543d; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AC Circuit Vector Matrix Pro-Dashboard</h1>
+    
+    <div class="layout">
+        <!-- Control Sidebar -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="circuit-type">Circuit Configuration</label>
+                <select id="circuit-type">
+                    <option value="series">Series RLC</option>
+                    <option value="parallel">Parallel RLC</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="voltage">Voltage (E_total): <span id="v-val" class="val-disp">120</span> V</label>
+                <input type="range" id="voltage" min="10" max="240" value="120" step="5">
+            </div>
+
+            <div class="control-group">
+                <label for="freq">Frequency (f): <span id="f-val" class="val-disp">60</span> Hz</label>
+                <input type="range" id="freq" min="10" max="500" value="60" step="5">
+            </div>
+
+            <div class="control-group">
+                <label for="res">Resistance (R): <span id="r-val" class="val-disp">36</span> Ω</label>
+                <input type="range" id="res" min="5" max="200" value="36" step="1">
+            </div>
+
+            <div class="control-group">
+                <label for="ind">Inductance (L): <span id="l-val" class="val-disp">106</span> mH</label>
+                <input type="range" id="ind" min="0" max="500" value="106" step="2">
+            </div>
+
+            <div class="control-group">
+                <label for="cap">Capacitance (C): <span id="c-val" class="val-disp">53</span> µF</label>
+                <input type="range" id="cap" min="0" max="500" value="53" step="2">
+            </div>
+        </div>
+
+        <!-- Render Graphics & Telemetry Output -->
+        <div class="visuals">
+            <div id="state-flag" class="state-banner resonant">Analyzing Network State...</div>
+
+            <div class="canvas-container">
+                <h3 id="phasor-title">Phasor Vector Diagram</h3>
+                <canvas id="phasorCanvas" width="380" height="380"></canvas>
+            </div>
+
+            <div class="canvas-container">
+                <h3>Power Triangle</h3>
+                <canvas id="powerCanvas" width="380" height="380"></canvas>
+            </div>
+
+            <div class="results-panel">
+                <div class="metric"><div class="metric-title">Impedance (Z)</div><div id="m-z" class="metric-value">0 Ω</div></div>
+                <div class="metric"><div class="metric-title">Total Current (I_T)</div><div id="m-it" class="metric-value">0 A</div></div>
+                <div class="metric"><div class="metric-title">Power Factor (PF)</div><div id="m-pf" class="metric-value">1.000</div></div>
+                <div class="metric"><div class="metric-title">Phase Angle (θ)</div><div id="m-phase" class="metric-value">0°</div></div>
+                <div class="metric"><div class="metric-title">Apparent Power (S)</div><div id="m-s" class="metric-value">0 VA</div></div>
+                <div class="metric"><div class="metric-title">True Power (P)</div><div id="m-p" class="metric-value">0 W</div></div>
+                <div class="metric"><div class="metric-title">Reactive Power (Q)</div><div id="m-q" class="metric-value">0 VARs</div></div>
+                <div class="metric"><div class="metric-title">Resonant Freq (f₀)</div><div id="m-f0" class="metric-value">N/A</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Link DOM Handles
+    const UI = {
+        type: document.getElementById('circuit-type'),
+        e: document.getElementById('voltage'),
+        f: document.getElementById('freq'),
+        r: document.getElementById('res'),
+        l: document.getElementById('ind'),
+        c: document.getElementById('cap'),
+        lblV: document.getElementById('v-val'),
+        lblF: document.getElementById('f-val'),
+        lblR: document.getElementById('r-val'),
+        lblL: document.getElementById('l-val'),
+        lblC: document.getElementById('c-val'),
+        flag: document.getElementById('state-flag'),
+        pTitle: document.getElementById('phasor-title'),
+        mZ: document.getElementById('m-z'),
+        mIt: document.getElementById('m-it'),
+        mPf: document.getElementById('m-pf'),
+        mPhase: document.getElementById('m-phase'),
+        mS: document.getElementById('m-s'),
+        mP: document.getElementById('m-p'),
+        mQ: document.getElementById('m-q'),
+        mF0: document.getElementById('m-f0')
+    };
+
+    const phasorCanvas = document.getElementById('phasorCanvas');
+    const powerCanvas = document.getElementById('powerCanvas');
+    const ctxP = phasorCanvas.getContext('2d');
+    const ctxW = powerCanvas.getContext('2d');
+
+    function drawArrow(ctx, fromx, fromy, tox, toy, color, label) {
+        if(Math.abs(tox - fromx) < 1 && Math.abs(toy - fromy) < 1) return;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(fromx, fromy);
+        ctx.lineTo(tox, toy);
+        ctx.stroke();
+
+        let angle = Math.atan2(toy - fromy, tox - fromx);
+        ctx.beginPath();
+        ctx.moveTo(tox, toy);
+        ctx.lineTo(tox - 10 * Math.cos(angle - Math.PI / 6), toy - 10 * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(tox - 10 * Math.cos(angle + Math.PI / 6), toy - 10 * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.font = "12px sans-serif";
+        ctx.fillText(label, tox + 5 * Math.cos(angle), toy + 5 * Math.sin(angle));
+    }
+
+    function updateSimulation() {
+        // Read Inputs
+        const isSeries = UI.type.value === 'series';
+        const Et = parseFloat(UI.e.value);
+        const f = parseFloat(UI.f.value);
+        const R = parseFloat(UI.r.value);
+        const L_mH = parseFloat(UI.l.value);
+        const C_uF = parseFloat(UI.c.value);
+
+        // Update Slider Labels
+        UI.lblV.innerText = Et; UI.lblF.innerText = f; UI.lblR.innerText = R;
+        UI.lblL.innerText = L_mH; UI.lblC.innerText = C_uF;
+
+        // Engineering Conversions
+        const w = 2 * Math.PI * f;
+        const L = L_mH / 1000;
+        const C = C_uF / 1000000;
+
+        const X_L = w * L;
+        const X_C = C > 0 ? 1 / (w * C) : Infinity;
+
+        // Variables to compute
