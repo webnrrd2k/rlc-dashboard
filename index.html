@@ -270,3 +270,99 @@
         const X_C = C > 0 ? 1 / (w * C) : Infinity;
 
         // Variables to compute
+        let Z, It, Ir, Il, Ic, Er, El, Ec, PF, phaseDeg, P, Q, S;
+        // Compute Resonant Frequency
+        if (L > 0 && C > 0) {
+        let f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
+        UI.mF0.innerText = ${f0.toFixed(1)} Hz;
+        } else {
+        UI.mF0.innerText = "N/A";
+        }
+        if (isSeries) {
+        UI.pTitle.innerText = "Voltage Phasor Diagram (Series)";
+        let X_C_clean = X_C === Infinity ? 0 : X_C;
+        let Xnet = X_L - X_C_clean;
+        Z = Math.sqrt(RR + XnetXnet);
+        It = Z > 0 ? Et / Z : 0;
+        Ir = Il = Ic = It; // Typo fixed here (capitalized Ic)
+        Er = It * R;
+        El = It * X_L;
+        Ec = It * X_C_clean;
+        PF = Z > 0 ? R / Z : 1;
+        phaseDeg = Math.atan2(Xnet, R) * (180 / Math.PI);
+        S = Et * It;
+        P = S * PF;
+        Q = S * Math.sin(phaseDeg * Math.PI / 180);
+        // Set Flag
+        if (Math.abs(Xnet) < 0.01) { UI.flag.className = "state-banner resonant"; UI.flag.innerText = "Resonant System (Unity Power Factor)"; }
+        else if (Xnet > 0) { UI.flag.className = "state-banner inductive"; UI.flag.innerText = "Net Inductive State (Lagging Current)"; }
+        else { UI.flag.className = "state-banner capacitive"; UI.flag.innerText = "Net Capacitive State (Leading Current)"; }
+        } else {
+        UI.pTitle.innerText = "Current Phasor Diagram (Parallel)";
+        Ir = R > 0 ? Et / R : 0;
+        Il = X_L > 0 ? Et / X_L : 0;
+        Ic = X_C !== Infinity ? Et / X_C : 0;
+        let Icnet = Ic - Il;
+        It = Math.sqrt(IrIr + IcnetIcnet);
+        Z = It > 0 ? Et / It : Infinity;
+        Er = El = Ec = Et;
+        PF = It > 0 ? Ir / It : 1;
+        phaseDeg = Math.atan2(Icnet, Ir) * (180 / Math.PI);
+        S = Et * It;
+        P = Et * Ir;
+        Q = Et * Icnet;
+        if (Math.abs(Icnet) < 0.001) { UI.flag.className = "state-banner resonant"; UI.flag.innerText = "Resonant System (Unity Power Factor)"; }
+        else if (Icnet < 0) { UI.flag.className = "state-banner inductive"; UI.flag.innerText = "Net Inductive State (Lagging Current)"; }
+        else { UI.flag.className = "state-banner capacitive"; UI.flag.innerText = "Net Capacitive State (Leading Current)"; }
+        }
+        // Display Numeric Telemetry Parameters
+        UI.mZ.innerText = Z === Infinity ? "Infinity Ω" : ${Z.toFixed(2)} Ω;
+        UI.mIt.innerText = ${It.toFixed(3)} A;
+        UI.mPf.innerText = PF.toFixed(3);
+        UI.mPhase.innerText = ${phaseDeg.toFixed(1)}°;
+        UI.mS.innerText = ${S.toFixed(1)} VA;
+        UI.mP.innerText = ${P.toFixed(1)} W;
+        UI.mQ.innerText = ${Q.toFixed(1)} VARs;
+        // -------------------------------------------------------------
+        // RENDER PHASOR PLOT
+        // -------------------------------------------------------------
+        ctxP.clearRect(0, 0, 380, 380);
+        const cx = 190, cy = 190;
+        // Background Grid Axes
+        ctxP.strokeStyle = "#cbd5e0"; ctxP.lineWidth = 1; ctxP.setLineDash();
+        ctxP.beginPath(); ctxP.moveTo(10, cy); ctxP.lineTo(370, cy); ctxP.moveTo(cx, 10); ctxP.lineTo(cx, 370); ctxP.stroke();
+        ctxP.setLineDash([]);
+        if (isSeries) {
+        let scale = 150 / Math.max(Er, El, Ec, Et, 1);
+        drawArrow(ctxP, cx, cy, cx + Er * scale, cy, "green", E_R (${Er.toFixed(0)}V));
+        drawArrow(ctxP, cx, cy, cx, cy - El * scale, "red", E_L (${El.toFixed(0)}V));
+        drawArrow(ctxP, cx, cy, cx, cy + Ec * scale, "blue", E_C (${Ec.toFixed(0)}V));
+        drawArrow(ctxP, cx, cy, cx + Er * scale, cy - (El - Ec) * scale, "purple", E_T (${Et.toFixed(0)}V));
+        } else {
+        let scale = 150 / Math.max(Ir, Il, Ic, It, 0.1);
+        drawArrow(ctxP, cx, cy, cx + Ir * scale, cy, "green", I_R (${Ir.toFixed(2)}A));
+        drawArrow(ctxP, cx, cy, cx, cy + Il * scale, "red", I_L (${Il.toFixed(2)}A));
+        drawArrow(ctxP, cx, cy, cx, cy - Ic * scale, "blue", I_C (${Ic.toFixed(2)}A));
+        drawArrow(ctxP, cx, cy, cx + Ir * scale, cy - (Ic - Il) * scale, "purple", I_T (${It.toFixed(2)}A));
+        }
+        // -------------------------------------------------------------
+        // RENDER POWER TRIANGLE
+        // -------------------------------------------------------------
+        ctxW.clearRect(0, 0, 380, 380);
+        const bx = 50, by = 190; // Left-aligned baseline axis anchor point
+        ctxW.strokeStyle = "#cbd5e0"; ctxW.lineWidth = 1; ctxW.setLineDash();
+        ctxW.beginPath(); ctxW.moveTo(10, by); ctxW.lineTo(370, by); stroke();
+        ctxW.setLineDash([]);
+        let pScale = 280 / Math.max(P, Math.abs(Q), S, 1);
+        let targetX = bx + P * pScale;
+        let targetY = by - Q * pScale; // Cartesian canvas inversion handles positive vectors upward
+        drawArrow(ctxW, bx, by, targetX, by, "green", P = ${P.toFixed(0)}W);
+        drawArrow(ctxW, targetX, by, targetX, targetY, "blue", Q = ${Math.abs(Q).toFixed(0)}VARs);
+        drawArrow(ctxW, bx, by, targetX, targetY, "purple", S = ${S.toFixed(0)}VA);
+}
+
+// Attach Dynamic Control Listeners
+const inputs = [UI.type, UI.e, UI.f, UI.r, UI.l, UI.c];
+inputs.forEach(input => input.addEventListener('input', updateSimulation));
+// Initialize System Viewport
+updateSimulation();
