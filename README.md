@@ -11,18 +11,26 @@ This project delivers comprehensive step-by-step mathematical telemetry alongsid
 *   **Real-Time Vector Graphics:** 
     *   **Phasor Maps:** Visualizes individual voltage component vectors ($E_R, E_L, E_C$) for series layouts and branch currents ($I_R, I_L, I_C$) for parallel layouts.
     *   **Power Triangles:** Renders True Power (W), Reactive Power (VARs), and Apparent Power (VA) triangles updating instantly with slider adjustments.
+*   **Circuit Schematic:** Draws the series or parallel circuit with component values and reactances.
+*   **Step-by-Step Solution:** Shows every formula with the numbers substituted in, plus check calculations.
 *   **Live Parameter Telemetry:** Automatically calculates and displays total network Impedance ($Z$), Total Current ($I_T$), Power Factor ($PF$), Phase Angle ($\theta$), and Resonant Frequency ($f_0$).
 *   **Automated Net-State Flagging:** Instantly displays a color-coded status banner revealing whether the circuit is operating in a **Net Inductive (Lagging)**, **Net Capacitive (Leading)**, or **Resonant (Unity)** state.
 
 ---
 
-## How to Run Locally
+## How to Run
 
-Because this application is written in native HTML5 and JavaScript, it is completely self-contained and requires **zero installations or dependencies**.
+**Online:** https://webnrrd2k.github.io/rlc-dashboard/ (served by GitHub Pages from `index.html` on the `main` branch).
 
-1. Download or copy the `index.html` file to your device.
-2. Double-click the file to open it instantly inside any modern web browser (Chrome, Safari, Firefox, Edge).
+**Locally:** the app is a single self-contained `index.html` with **zero installations or dependencies**.
+
+1. Download `index.html` (or clone the repo).
+2. Double-click it to open it in any modern browser (Chrome, Safari, Firefox, Edge).
 3. Works completely offline—no internet connection required.
+
+Set **L** or **C** to `0` to remove that component. In series it is replaced by a wire; in parallel its branch is removed. Type exact values into the number boxes for homework problems—they can go past the slider range.
+
+**Sign convention:** the phase angle θ is reported as a magnitude with *leads/lags*. Internally θ is the impedance angle (positive = inductive, current lags).
 
 ---
 
@@ -62,4 +70,3 @@ The engine underlying the simulation dashboard relies on the following standard 
 ## 🤝 Contribution & License
 
 Feel free to clone this project, add features (such as internal inductor coil resistance tracking), or share it with your study groups. Distributed under the MIT License—feel free to use it to ace your exams!
-Use code with caution.
